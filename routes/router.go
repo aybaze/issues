@@ -141,6 +141,7 @@ func NewRouter(app *issues.Application, jwtSecret string) *Router {
 	router.Handle("/api/v1/workspaces/", router.WithMiddleware(handler, router.handleGetWorkspaces)).Methods("GET")
 	router.Handle("/api/v1/workspaces/{workspaceID}", router.WithMiddleware(handler, router.handleGetWorkspace)).Methods("GET")
 	router.Handle("/api/v1/workspaces/{workspaceID}/issues", router.WithMiddleware(handler, router.handleGetIssues)).Methods("GET")
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/dist")))
 
 	return router
 }

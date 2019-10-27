@@ -41,6 +41,8 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
+		log.Debugf("Got event %s for issue %s", event.GetAction(), issuerIdentifier(event))
+
 		if event.GetAction() == "edited" {
 			// do not trigger on bot updates, otherwise we will update forever
 			if event.Sender.GetType() == "Bot" {
@@ -52,7 +54,10 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 	} else {
 		log.Warnf("Not handling unknown event type %s", eventType)
 	}
+}
 
+func issuerIdentifier(event github.IssuesEvent) string {
+	return fmt.Sprintf("%s/%s#%d", event.Repo.Owner.GetLogin(), event.Repo.GetName(), event.GetIssue().GetNumber())
 }
 
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
@@ -81,9 +86,9 @@ func (router *Router) handleIssueChange(clients *issues.GitHubClients, event git
 
 	// update issue text
 	if _, _, err = clients.V3.Issues.Edit(context.Background(), *event.Repo.Owner.Login, *event.Repo.Name, *issue.Number, &request); err != nil {
-		log.Errorf("Updating issue %s/%s#%d failed: %s", *event.Repo.Owner.Login, *event.Repo.Name, *issue.Number, err)
+		log.Errorf("Updating issue %s failed: %s", issuerIdentifier(event), err)
 		return
 	}
 
-	log.Infof("Updated issue %s/%s#%d.", *event.Repo.Owner.Login, *event.Repo.Name, *issue.Number)
+	log.Infof("Updated issue %s", issuerIdentifier(event))
 }
