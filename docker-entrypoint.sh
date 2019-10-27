@@ -14,5 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-./restore.sh $AYBAZE_POSTGRES
-./issues $AYBAZE_POSTGRES
+./restore.sh $ISSUES_POSTGRES
+./issues
