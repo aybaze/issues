@@ -23,6 +23,7 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
+	"github.com/gregjones/httpcache"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
@@ -67,7 +68,12 @@ func (app *Application) newGitHubClients(userID int64) (clients *GitHubClients, 
 		AccessToken: serviceToken.AccessToken,
 	})
 
-	httpClient := oauth2.NewClient(context.Background(), tokenSource)
+	cachedTransport := httpcache.NewMemoryCacheTransport()
+	cachedTransport.Transport = &oauth2.Transport{
+		Source: tokenSource,
+	}
+
+	httpClient := &http.Client{Transport: cachedTransport}
 
 	// creating new GitHub clients
 	clients = &GitHubClients{

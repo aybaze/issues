@@ -15,11 +15,15 @@
 package issues
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/go-github/github"
 )
 
 type RepositoryRefArray []int64
@@ -78,4 +82,50 @@ func (app *Application) GetWorkspace(workspaceID int64) (*Workspace, error) {
 	}
 
 	return &workspace, nil
+}
+
+type issue struct {
+	Number int
+	Title  string
+}
+
+// GetBacklog retrieves all issues from all workspaces that do not have a milestone
+// associated with it. This needs to query the database as well as the GitHub
+// GraphQL endpoint
+func (app *Application) GetBacklog(clients *GitHubClients, workspaceID int64) (interface{}, error) {
+	// just some fun for now
+	/*var q struct {
+		Repository struct {
+			Issue struct {
+				Nodes []issue
+			} `graphql:"issues(last: 100, filterBy: {milestone: null, states: OPEN})"`
+		} `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
+	}
+
+	variables := map[string]interface{}{
+		"repositoryOwner": githubv4.String("oxisto"),
+		"repositoryName":  githubv4.String("aybaze"),
+	}
+
+	err := clients.V4.Query(context.Background(), &q, variables)
+	if err != nil {
+		return nil
+	}
+
+	return q.Repository.Issue.Nodes*/
+	start := time.Now()
+	options := github.IssueListByRepoOptions{
+		Milestone: "none",
+		State:     "open",
+	}
+
+	issues, _, err := clients.V3.Issues.ListByRepo(context.Background(), "oxisto", "aybaze", &options)
+
+	end := time.Now()
+
+	duration := end.Sub(start)
+
+	log.Infof("call to GitHub took %+v", duration)
+
+	return issues, err
 }

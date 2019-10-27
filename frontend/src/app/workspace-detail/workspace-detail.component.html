@@ -1,3 +1,18 @@
 <p>workspace-detail works!</p>
 
 {{ workspace | json }}
+
+<ul class="list-group">
+    <li class="list-group-item" *ngFor="let issue of backlog">
+        <img style="width: 32px; float: left" class="pr-2" [src]="issue.assignee.avatar_url"
+            *ngIf="issue.assignee; else notAssigned" />
+        <ng-template #notAssigned>
+            <div style="min-width: 32px; float: left" class="pr-2">&nbsp;</div>
+        </ng-template>
+        <div>
+            <div style="font-weight: 600;">{{ issue.title }}</div>
+            <small class="text-muted">#{{ issue.number }} opened {{ issue.created_at | amTimeAgo }} by <app-user-link
+                    [user]="issue.user"></app-user-link></small>
+        </div>
+    </li>
+</ul>

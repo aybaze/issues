@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { WorkspaceService } from '../workspace.service';
-import { Workspace } from '../workspace';
+import { Workspace, Issue } from '../workspace';
 
 @Component({
   selector: 'app-workspace-detail',
@@ -12,6 +12,7 @@ export class WorkspaceDetailComponent implements OnInit {
 
   workspaceId: number;
   workspace: Workspace;
+  backlog: Issue[];
 
   constructor(private workspaceService: WorkspaceService, private route: ActivatedRoute) {
   }
@@ -27,6 +28,14 @@ export class WorkspaceDetailComponent implements OnInit {
   updateWorkspace() {
     this.workspaceService.getWorkspace(this.workspaceId).subscribe(workspace => {
       this.workspace = workspace;
+
+      this.fetchBacklog();
+    })
+  }
+
+  fetchBacklog() {
+    this.workspaceService.getIssuers(this.workspaceId).subscribe(issues => {
+      this.backlog = issues;
     })
   }
 

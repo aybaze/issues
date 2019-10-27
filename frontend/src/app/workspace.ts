@@ -16,3 +16,8 @@ export class Workspace {
     id: number
     name: string
 }
+
+export class Issue {
+    number: number
+    title: string
+}

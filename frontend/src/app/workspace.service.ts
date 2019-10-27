@@ -14,7 +14,7 @@
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Workspace } from './workspace';
+import { Workspace, Issue } from './workspace';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 
@@ -36,6 +36,12 @@ export class WorkspaceService {
   getWorkspace(workspaceID: number): Observable<Workspace> {
     return this.http.get<any[]>('/api/v1/workspaces/' + workspaceID).pipe(map(data => {
       return Object.assign(new Workspace(), data)
+    }));
+  }
+
+  getIssuers(workspaceID: number): Observable<Issue[]> {
+    return this.http.get<any[]>('/api/v1/workspaces/' + workspaceID + '/issues').pipe(map(entries => {
+      return entries.map(entry => Object.assign(new Issue(), entry));
     }));
   }
 }

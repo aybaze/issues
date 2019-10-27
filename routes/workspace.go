@@ -51,15 +51,18 @@ func (router *Router) handleGetWorkspace(w http.ResponseWriter, r *http.Request)
 
 func (router *Router) handleGetIssues(w http.ResponseWriter, r *http.Request) {
 	var (
-		workspaceID int
+		workspaceID int64
 		err         error
 	)
-	if workspaceID, err = strconv.Atoi(mux.Vars(r)["workspaceID"]); err != nil {
+	if workspaceID, err = strconv.ParseInt(mux.Vars(r)["workspaceID"], 10, 64); err != nil {
 		httputil.JSONResponse(w, r, nil, err)
 		return
 	}
 
-	log.Infof("Fetching workspace %d", workspaceID)
+	clients := r.Context().Value(issues.ServiceGitHub).(*issues.GitHubClients)
 
+	issues, err := router.app.GetBacklog(clients, workspaceID)
 	// TODO: check somehow, if user has access
+
+	httputil.JSONResponse(w, r, issues, err)
 }
