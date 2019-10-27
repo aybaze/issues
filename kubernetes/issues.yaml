@@ -16,7 +16,7 @@ spec:
         app: issues
     spec:
       containers:
-      - image: docker.pkg.github.com/aybaze/issues/api:$TAG
+      - image: aybaze/issues:$TAG
         imagePullPolicy: Always
         name: issues
         env:

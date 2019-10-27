@@ -17,9 +17,9 @@ jobs:
       run: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
     - name: Retrieve kubeconfig from ENV
       run: mkdir -p ~/.kube && echo ${{ secrets.KUBECONFIG_BASE64 }} | base64 -d > ~/.kube/config
-    - name: Expose current build
-      run: export TAG=${{ steps.publish.outputs.snapshot-tag }}
     - name: Install gettext
       run: sudo apt update && sudo apt install -y gettext
     - name: Install API
-      run: envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
+      run: |
+        export TAG=${{ steps.publish.outputs.snapshot-tag }}
+        envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
