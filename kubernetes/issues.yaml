@@ -1,0 +1,73 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: issues
+  name: issues
+  namespace: aybaze
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: issues
+  template:
+    metadata:
+      labels:
+        app: issues
+    spec:
+      containers:
+      - image: docker.pkg.github.com/aybaze/issues/api:$TAG
+        imagePullPolicy: Always
+        name: issues
+        env:
+        - name: aybaze_POSTGRES
+          value: postgres
+        volumeMounts:
+        - name: config
+          mountPath: /usr/aybaze/config
+          readOnly: true
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+      volumes:
+      - name: config
+        secret:
+          secretName: config-secret
+          items:
+          - key: config-production.yaml
+            path: config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: issues
+  namespace: aybaze
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: issues
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
+  name: issues
+  namespace: aybaze
+spec:
+  rules:
+  - host: issues.aybaze.com
+    http:
+      paths:
+      - backend:
+          serviceName: issues
+          servicePort: 8000
+        path: /
+  tls:
+  - hosts:
+    - issues.aybaze.com
+    secretName: issues-tls
