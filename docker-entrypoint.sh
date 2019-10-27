@@ -15,4 +15,4 @@
 # limitations under the License.
 
 ./restore.sh $AYBAZE_POSTGRES
-./aybaze-api $AYBAZE_POSTGRES
+./issues $AYBAZE_POSTGRES
