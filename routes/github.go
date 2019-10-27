@@ -19,13 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"issues"
-	"issues/db"
 	"net/http"
 
 	"github.com/google/go-github/github"
 )
 
-func GitHubCallback(w http.ResponseWriter, r *http.Request) {
+func handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	eventType := r.Header.Get("X-Github-Event")
@@ -63,7 +62,7 @@ func handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) 
 
 	// find relationships to other issues
 	var relationships []issues.Relationship
-	if _, err = db.Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
+	if _, err = issues.GetDatabase().Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
 		log.Errorf("Could not fetch relationships to other issues from database: %s", err)
 		return
 	}

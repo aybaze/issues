@@ -15,21 +15,12 @@
 package issues
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
-
-var (
-	log *logrus.Entry
-)
-
-func init() {
-	log = logrus.WithField("component", "main")
-}
 
 type RepositoryRefArray []int64
 
@@ -61,10 +52,26 @@ func (r *RepositoryRefArray) Scan(src interface{}) error {
 	return nil
 }
 
+func GetWorkspace(workspaceID int64, db Database) (*Workspace, error) {
+	var (
+		workspace Workspace
+		err       error
+	)
+
+	err = db.SelectOne(&workspace, "select * from workspace where id=$1", workspaceID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &workspace, nil
+}
+
 type Workspace struct {
-	ID            int64              `db:"id, primarykey, autoincrement"`
-	Name          string             `db:"name"`
-	RepositoryIDs RepositoryRefArray `db:"repositoryIDs`
+	ID            int64              `db:"id, primarykey, autoincrement" json:"id"`
+	Name          string             `db:"name" json:"name"`
+	RepositoryIDs RepositoryRefArray `db:"repositoryIDs" json:"repositoryIDs"`
 }
 
 type Relationship struct {

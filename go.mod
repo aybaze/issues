@@ -23,5 +23,6 @@ require (
 	github.com/urfave/negroni v1.0.0
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	google.golang.org/appengine v1.4.0
 	gopkg.in/gorp.v2 v2.0.0
 )

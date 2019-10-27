@@ -28,13 +28,13 @@ export class WorkspaceService {
   }
 
   getWorkspaces(): Observable<Workspace[]> {
-    return this.http.get<any[]>('/api/v1/workspaces').pipe(map(entries => {
+    return this.http.get<any[]>('/api/v1/workspaces/').pipe(map(entries => {
       return entries.map(entry => Object.assign(new Workspace(), entry));
     }));;
   }
 
   getWorkspace(workspaceID: number): Observable<Workspace> {
-    return this.http.get<any[]>('/api/v1/workspace/' + workspaceID).pipe(map(data => {
+    return this.http.get<any[]>('/api/v1/workspaces/' + workspaceID).pipe(map(data => {
       return Object.assign(new Workspace(), data)
     }));
   }

@@ -61,14 +61,14 @@ func handleOAuthFlowError(err error, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusFound)
 }
 
-func OAuth2Login(w http.ResponseWriter, r *http.Request) {
+func handleOAuth2Login(w http.ResponseWriter, r *http.Request) {
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOnline)
 
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusFound)
 }
 
-func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
+func handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	var (
 		serviceToken *oauth2.Token
 		apiToken     *oauth2.Token
@@ -86,15 +86,10 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("token=%+v", serviceToken)
-
-	ts := oauth2.StaticTokenSource(serviceToken)
-	tc := oauth2.NewClient(ctx, ts)
+	tc := conf.Client(ctx, serviceToken)
 
 	// create a GitHub client
 	gc := github.NewClient(tc)
-
-	log.Infof("gc=%+v", gc)
 
 	if user, _, err = gc.Users.Get(ctx, ""); err != nil {
 		handleOAuthFlowError(err, w, r)

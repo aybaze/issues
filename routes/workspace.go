@@ -16,7 +16,6 @@ package routes
 
 import (
 	"issues"
-	"issues/db"
 	"net/http"
 	"strconv"
 
@@ -24,29 +23,33 @@ import (
 	"github.com/oxisto/go-httputil"
 )
 
-func GetWorkspaces(w http.ResponseWriter, r *http.Request) {
+func handleGetWorkspaces(w http.ResponseWriter, r *http.Request) {
 	var workspaces []issues.Workspace
-	_, err := db.Select(&workspaces, "select * from workspace")
+	_, err := issues.GetDatabase().Select(&workspaces, "select * from workspace")
 
 	httputil.JSONResponse(w, r, workspaces, err)
 }
 
-func GetWorkspace(w http.ResponseWriter, r *http.Request) {
+func handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
 	var (
-		workspaceID int
+		workspaceID int64
+		workspace   *issues.Workspace
 		err         error
 	)
-	if workspaceID, err = strconv.Atoi(mux.Vars(r)["workspaceID"]); err != nil {
+
+	if workspaceID, err = strconv.ParseInt(mux.Vars(r)["workspaceID"], 10, 64); err != nil {
 		httputil.JSONResponse(w, r, nil, err)
 		return
 	}
 
-	log.Infof("Fetching workspace %d", workspaceID)
-
 	// TODO: check somehow, if user has access
+	workspace, err = issues.GetWorkspace(workspaceID, issues.GetDatabase())
+	httputil.JSONResponse(w, r, workspace, err)
+
+	return
 }
 
-func GetIssues(w http.ResponseWriter, r *http.Request) {
+func handleGetIssues(w http.ResponseWriter, r *http.Request) {
 	var (
 		workspaceID int
 		err         error

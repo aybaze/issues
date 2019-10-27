@@ -16,7 +16,6 @@ package main
 
 import (
 	"issues"
-	"issues/db"
 	"issues/routes"
 	"net/http"
 	"os"
@@ -92,8 +91,7 @@ func doCmd(cmd *cobra.Command, args []string) {
 
 	log.SetLevel(log.DebugLevel)
 
-	db.InitPostgreSQL(viper.GetString(PostgresFlag))
-	issues.InitStuff(viper.GetInt64(GitHubAppIDFlag))
+	issues.Init(viper.GetInt64(GitHubAppIDFlag), issues.NewMappedPostgreSQL(viper.GetString(PostgresFlag)))
 	routes.AddServiceConnection(issues.ServiceGitHub, viper.GetString(GitHubAppClientIDFlag), viper.GetString(GitHubAppClientSecretFlag))
 
 	listen := viper.GetString(ListenFlag)

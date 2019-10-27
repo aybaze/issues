@@ -128,12 +128,12 @@ func NewRouter(jwtSecret string) *mux.Router {
 	handler := auth.NewHandler(options)
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/oauth2/callback", OAuth2Callback)
-	router.HandleFunc("/oauth2/login", OAuth2Login)
-	router.HandleFunc("/github/callback", GitHubCallback).Methods("POST")
-	router.Handle("/api/v1/workspaces/", WithMiddleware(handler, GetWorkspaces)).Methods("GET")
-	router.Handle("/api/v1/workspaces/{workspaceID}", WithMiddleware(handler, GetWorkspace)).Methods("GET")
-	router.Handle("/api/v1/workspaces/{workspaceID}/issues", WithMiddleware(handler, GetIssues)).Methods("GET")
+	router.HandleFunc("/oauth2/callback", handleOAuth2Callback)
+	router.HandleFunc("/oauth2/login", handleOAuth2Login)
+	router.HandleFunc("/github/callback", handleGitHubCallback).Methods("POST")
+	router.Handle("/api/v1/workspaces/", WithMiddleware(handler, handleGetWorkspaces)).Methods("GET")
+	router.Handle("/api/v1/workspaces/{workspaceID}", WithMiddleware(handler, handleGetWorkspace)).Methods("GET")
+	router.Handle("/api/v1/workspaces/{workspaceID}/issues", WithMiddleware(handler, handleGetIssues)).Methods("GET")
 
 	return router
 }

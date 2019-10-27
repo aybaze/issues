@@ -16,4 +16,6 @@
 
 <p>dashboard works!</p>
 
-{{ workspaces | json }}
+<ul *ngFor="let workspace of workspaces">
+    <li><a [routerLink]="['/workspace', workspace.id]">{{ workspace.name }}</a></li>
+</ul>
