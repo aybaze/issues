@@ -23,5 +23,3 @@ jobs:
       run: apt update && apt install -y gettext
     - name: Install API
       run: envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
-    - name: Install PostgreSQL
-      run: envsubst < kubernetes/postgres.yaml | ./kubectl apply -f -

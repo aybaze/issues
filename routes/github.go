@@ -61,7 +61,7 @@ func (router *Router) handleIssueChange(clients *issues.GitHubClients, event git
 	issue := event.GetIssue()
 
 	// find relationships to other issues
-	var relationships []issues.Relationship
+	var relationships []relationship
 	if _, err = router.app.GetDatabase().Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
 		log.Errorf("Could not fetch relationships to other issues from database: %s", err)
 		return

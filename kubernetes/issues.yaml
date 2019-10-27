@@ -20,7 +20,7 @@ spec:
         imagePullPolicy: Always
         name: issues
         env:
-        - name: aybaze_POSTGRES
+        - name: AYBAZE_POSTGRES
           value: postgres
         volumeMounts:
         - name: config

@@ -46,7 +46,7 @@ func NewMappedPostgreSQL(host string) Database {
 }
 
 func (p *MappedPostgreSQL) Init() {
-	p.db, _ = sql.Open("postgres", fmt.Sprintf("postgres://postgres@%s/postgres?sslmode=disable", p.host))
+	p.db, _ = sql.Open("postgres", fmt.Sprintf("postgres://postgres@%s/issues?sslmode=disable", p.host))
 	p.mapper = &gorp.DbMap{Db: p.db, Dialect: gorp.PostgresDialect{}}
 
 	p.mapper.AddTableWithName(Workspace{}, "workspace").SetKeys(true, "ID")
