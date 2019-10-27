@@ -28,8 +28,9 @@ import (
 )
 
 var (
-	ctx  context.Context
-	conf *oauth2.Config
+	ctx       context.Context
+	conf      *oauth2.Config
+	jwtSecret string
 )
 
 func init() {
@@ -49,7 +50,12 @@ func AddServiceConnection(service string, clientID string, clientSecret string) 
 	}
 }
 
-func HandleError(err error, w http.ResponseWriter, r *http.Request) {
+// SetJWTSecret sets the JWT secret used for signing tokens issued by our API
+func SetJWTSecret(secret string) {
+	jwtSecret = secret
+}
+
+func handleOAuthFlowError(err error, w http.ResponseWriter, r *http.Request) {
 	log.Errorf("Could not fetch access token: %v", err)
 	w.Header().Add("Location", "/oauth2/login")
 	w.WriteHeader(http.StatusFound)
@@ -76,7 +82,7 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	// fetch access token with authorization code
 	serviceToken, err = conf.Exchange(ctx, code)
 	if err != nil {
-		HandleError(err, w, r)
+		handleOAuthFlowError(err, w, r)
 		return
 	}
 
@@ -91,7 +97,7 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	log.Infof("gc=%+v", gc)
 
 	if user, _, err = gc.Users.Get(ctx, ""); err != nil {
-		HandleError(err, w, r)
+		handleOAuthFlowError(err, w, r)
 		return
 	}
 
@@ -109,9 +115,9 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 
 	// go on and issue an API token for ourselves
 	// issue an authentication token for our own API
-	apiToken, err = auth.IssueToken([]byte(JwtSecretKey), fmt.Sprintf("%d", user.GetID()), time.Now().Add(1*time.Hour))
+	apiToken, err = auth.IssueToken([]byte(jwtSecret), fmt.Sprintf("%d", user.GetID()), time.Now().Add(1*time.Hour))
 	if err != nil {
-		HandleError(err, w, r)
+		handleOAuthFlowError(err, w, r)
 		return
 	}
 

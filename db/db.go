@@ -49,6 +49,12 @@ func Insert(object interface{}) (err error) {
 	return mapper.Insert(object)
 }
 
+func Update(object interface{}) (rowsChanged int64, err error) {
+	log.Debugf("Updating %+v", object)
+
+	return mapper.Update(object)
+}
+
 func Select(i interface{}, query string, args ...interface{}) ([]interface{}, error) {
 	return mapper.Select(i, query, args...)
 }

@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/onsi/ginkgo v1.10.2 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/oxisto/go-httputil v0.3.2
+	github.com/oxisto/go-httputil v0.3.3
 	github.com/shurcooL/githubv4 v0.0.0-20191006152017-6d1ea27df521
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.4.2

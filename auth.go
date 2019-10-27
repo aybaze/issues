@@ -126,8 +126,43 @@ func init() {
 	installationClients = make(map[int64]*GitHubClients)
 }
 
-func AddServiceToken(token *ServiceToken) error {
-	return db.Insert(token)
+func AddServiceToken(token *ServiceToken) (err error) {
+	var old *ServiceToken
+
+	// check, if it already exists
+	old, err = GetServiceToken(token.Service, token.UserID)
+	if err != nil {
+		return err
+	}
+
+	if old == nil {
+		return db.Insert(token)
+	}
+
+	old.AccessToken = token.AccessToken
+
+	_, err = db.Update(token)
+
+	// force in-memory cache to refresh
+	if token.Service == ServiceGitHub {
+		delete(clients, token.UserID)
+	}
+
+	return
+}
+
+func GetServiceToken(service string, userID int64) (token *ServiceToken, err error) {
+	var t ServiceToken
+	err = db.SelectOne(&t, "select * from servicetoken where service=$1 and \"userId\"=$2", service, userID)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	token = &t
+
+	return token, err
 }
 
 func GetUserClients(userID int64) (c *GitHubClients, err error) {

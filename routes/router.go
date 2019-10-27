@@ -33,10 +33,6 @@ var (
 	log *logrus.Entry
 )
 
-const (
-	JwtSecretKey = "CHANGEME111!!!"
-)
-
 func init() {
 	log = logrus.WithField("component", "routes")
 }
@@ -47,6 +43,21 @@ func WithMiddleware(handler *auth.JWTHandler, handlerFunc http.HandlerFunc) *neg
 		negroni.HandlerFunc(HandleFetchCharacterWithNext),
 		negroni.Wrap(handlerFunc),
 	)
+}
+
+func HandleError(err error, w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	log.Errorf("An error occured in the processing chain: %s", err)
+
+	var ve *jwt.ValidationError
+	if errors.As(err, &ve) {
+		// invalid JWT
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// otherwise, we cannot process it
+	w.WriteHeader(http.StatusInternalServerError)
+	return
 }
 
 // Special implementation for Negroni, but could be used elsewhere.
@@ -102,14 +113,18 @@ func HandleFetchCharacterWithNext(w http.ResponseWriter, r *http.Request, next h
 	next(w, r)
 }
 
-func NewRouter() *mux.Router {
+func NewRouter(jwtSecret string) *mux.Router {
+	// set the JWT secret so its accessible in API handlers
+	SetJWTSecret(jwtSecret)
+
 	options := auth.DefaultOptions
 	options.JWTKeySupplier = func(token *jwt.Token) (interface{}, error) {
-		return []byte(JwtSecretKey), nil
+		return []byte(jwtSecret), nil
 	}
 	options.TokenExtractor = auth.ExtractFromFirstAvailable(
 		auth.ExtractTokenFromCookie("auth"),
 		auth.ExtractTokenFromHeader)
+	options.ErrorHandler = HandleError
 	handler := auth.NewHandler(options)
 
 	router := mux.NewRouter().StrictSlash(true)
