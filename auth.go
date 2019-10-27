@@ -1,0 +1,171 @@
+// Copyright 2019 Christian Banse
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package issues
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"issues/db"
+	"net/http"
+
+	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/google/go-github/github"
+	"github.com/shurcooL/githubv4"
+	"golang.org/x/oauth2"
+)
+
+// TokenCache contains a simple cache of github clients
+var clients map[int64]*GitHubClients
+var installationClients map[int64]*GitHubClients
+
+var appID int64
+
+var ErrAuthenticationNeeded = errors.New("You need to authenticate with the service")
+
+const ServiceGitHub = "GitHub"
+
+// GitHubClients is a structure that provides v3 (REST) and v4 (GraphQL) GitHub clients
+type GitHubClients struct {
+	// The authenticated user, if this is a user-client
+	User *github.User
+	// Specifices, if this is a user client or installation client
+	IsUserClient bool
+	V3           *github.Client
+	V4           *githubv4.Client
+}
+
+// ServiceToken represents an OAuth2-style token to an external service, such as GitHub
+type ServiceToken struct {
+	UserID      int64  `db:"userId, primarykey"`
+	Service     string `db:"service"`
+	AccessToken string `db:"accessToken"`
+}
+
+// TODO: rename this function and move it somewhere else
+func InitStuff(i int64) {
+	mapper := db.GetMapper()
+
+	mapper.AddTableWithName(Workspace{}, "workspace").SetKeys(true, "ID")
+	mapper.AddTableWithName(ServiceToken{}, "servicetoken").SetKeys(false, "UserID")
+
+	appID = i
+}
+
+func newGitHubClients(userID int64) (clients *GitHubClients, err error) {
+	// fetch token from db
+	var serviceToken ServiceToken
+	if err = db.SelectOne(&serviceToken, "select * from servicetoken where service=$1 and \"userId\"=$2", "GitHub", userID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrAuthenticationNeeded
+		}
+
+		return nil, fmt.Errorf("Could not fetch GitHub token from database: %w", err)
+	}
+
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: serviceToken.AccessToken,
+	})
+
+	httpClient := oauth2.NewClient(context.Background(), tokenSource)
+
+	// creating new GitHub clients
+	clients = &GitHubClients{
+		IsUserClient: true,
+		V3:           github.NewClient(httpClient),
+		V4:           githubv4.NewClient(httpClient),
+	}
+
+	// fetch a user, to test the client
+	if clients.User, _, err = clients.V3.Users.Get(context.Background(), ""); err != nil {
+		return nil, fmt.Errorf("Could not create GitHub clients because authenticated user could not be retrieved: %s", err)
+	}
+
+	log.Debugf("Succesfully created GitHub clients for authenticated user %s", clients.User.GetLogin())
+
+	return clients, nil
+}
+
+func newGitHubInstallationClients(installationID int64) (clients *GitHubClients, err error) {
+	tr := http.DefaultTransport
+
+	itr, err := ghinstallation.NewKeyFromFile(tr, appID, installationID, "2019-10-26.private-key.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := &http.Client{Transport: itr}
+
+	// creating new GitHub clients
+	clients = &GitHubClients{
+		IsUserClient: false,
+		V3:           github.NewClient(httpClient),
+		V4:           githubv4.NewClient(httpClient),
+	}
+
+	log.Debugf("Succesfully created GitHub clients for installation ID %d", installationID)
+
+	return
+}
+
+func init() {
+	clients = make(map[int64]*GitHubClients)
+	installationClients = make(map[int64]*GitHubClients)
+}
+
+func AddServiceToken(token *ServiceToken) error {
+	return db.Insert(token)
+}
+
+func GetUserClients(userID int64) (c *GitHubClients, err error) {
+	var (
+		found bool
+	)
+
+	c, found = clients[userID]
+
+	if found {
+		log.Debugf("Using in-memory GitHub clients for authenticated user %s", c.User.GetLogin())
+		return c, nil
+	}
+
+	if c, err = newGitHubClients(userID); err != nil {
+		return nil, err
+	}
+
+	clients[userID] = c
+	return
+}
+
+func GetInstallationClients(installationID int64) (c *GitHubClients, err error) {
+	var (
+		found bool
+	)
+
+	c, found = installationClients[installationID]
+
+	if found {
+		log.Debugf("Using in-memory GitHub clients for installation %d", installationID)
+		return c, nil
+	}
+
+	if c, err = newGitHubInstallationClients(installationID); err != nil {
+		return nil, err
+	}
+
+	installationClients[installationID] = c
+	return
+}

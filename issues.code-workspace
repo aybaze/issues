@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "frontend"
+		}
+	],
+	"settings": {
+		"licenser.author": "Christian Banse",
+		"licenser.projectName": "Issues"
+	}
+}
