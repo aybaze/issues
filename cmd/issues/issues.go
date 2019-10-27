@@ -87,12 +87,14 @@ func doCmd(cmd *cobra.Command, args []string) {
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	log.Info("Starting server...")
 
-	router := handlers.LoggingHandler(&httputil.LogWriter{Level: log.DebugLevel, Component: "http"}, routes.NewRouter(viper.GetString(JwtSecretFlag)))
-
 	log.SetLevel(log.DebugLevel)
 
-	issues.Init(viper.GetInt64(GitHubAppIDFlag), issues.NewMappedPostgreSQL(viper.GetString(PostgresFlag)))
-	routes.AddServiceConnection(issues.ServiceGitHub, viper.GetString(GitHubAppClientIDFlag), viper.GetString(GitHubAppClientSecretFlag))
+	db := issues.NewMappedPostgreSQL(viper.GetString(PostgresFlag))
+	appID := viper.GetInt64(GitHubAppIDFlag)
+
+	app := issues.NewApplication(appID, db)
+	app.AddServiceConnection(issues.ServiceGitHub, viper.GetString(GitHubAppClientIDFlag), viper.GetString(GitHubAppClientSecretFlag))
+	router := handlers.LoggingHandler(&httputil.LogWriter{Level: log.DebugLevel, Component: "http"}, routes.NewRouter(app, viper.GetString(JwtSecretFlag)))
 
 	listen := viper.GetString(ListenFlag)
 

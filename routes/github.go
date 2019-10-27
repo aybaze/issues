@@ -24,7 +24,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	eventType := r.Header.Get("X-Github-Event")
@@ -37,7 +37,7 @@ func handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 		)
 		decoder.Decode(&event)
 
-		if clients, err = issues.GetInstallationClients(event.GetInstallation().GetID()); err != nil {
+		if clients, err = router.app.GetInstallationClients(event.GetInstallation().GetID()); err != nil {
 			return
 		}
 
@@ -47,7 +47,7 @@ func handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			handleIssueChange(clients, event)
+			router.handleIssueChange(clients, event)
 		}
 	} else {
 		log.Warnf("Not handling unknown event type %s", eventType)
@@ -55,14 +55,14 @@ func handleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
+func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
 	var err error
 
 	issue := event.GetIssue()
 
 	// find relationships to other issues
 	var relationships []issues.Relationship
-	if _, err = issues.GetDatabase().Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
+	if _, err = router.app.GetDatabase().Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
 		log.Errorf("Could not fetch relationships to other issues from database: %s", err)
 		return
 	}

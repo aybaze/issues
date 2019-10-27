@@ -52,10 +52,10 @@ type ServiceToken struct {
 	AccessToken string `db:"accessToken"`
 }
 
-func newGitHubClients(userID int64) (clients *GitHubClients, err error) {
+func (app *Application) newGitHubClients(userID int64) (clients *GitHubClients, err error) {
 	// fetch token from db
 	var serviceToken ServiceToken
-	if err = db.SelectOne(&serviceToken, "select * from servicetoken where service=$1 and \"userId\"=$2", "GitHub", userID); err != nil {
+	if err = app.db.SelectOne(&serviceToken, "select * from servicetoken where service=$1 and \"userId\"=$2", "GitHub", userID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrAuthenticationNeeded
 		}
@@ -86,10 +86,10 @@ func newGitHubClients(userID int64) (clients *GitHubClients, err error) {
 	return clients, nil
 }
 
-func newGitHubInstallationClients(installationID int64) (clients *GitHubClients, err error) {
+func (app *Application) newGitHubInstallationClients(installationID int64) (clients *GitHubClients, err error) {
 	tr := http.DefaultTransport
 
-	itr, err := ghinstallation.NewKeyFromFile(tr, appID, installationID, "2019-10-26.private-key.pem")
+	itr, err := ghinstallation.NewKeyFromFile(tr, app.AppID, installationID, "2019-10-26.private-key.pem")
 	if err != nil {
 		return nil, err
 	}
@@ -113,22 +113,22 @@ func init() {
 	installationClients = make(map[int64]*GitHubClients)
 }
 
-func AddServiceToken(token *ServiceToken) (err error) {
+func (app *Application) AddServiceToken(token *ServiceToken) (err error) {
 	var old *ServiceToken
 
 	// check, if it already exists
-	old, err = GetServiceToken(token.Service, token.UserID)
+	old, err = app.GetServiceToken(token.Service, token.UserID)
 	if err != nil {
 		return err
 	}
 
 	if old == nil {
-		return db.Insert(token)
+		return app.db.Insert(token)
 	}
 
 	old.AccessToken = token.AccessToken
 
-	_, err = db.Update(token)
+	_, err = app.db.Update(token)
 
 	// force in-memory cache to refresh
 	if token.Service == ServiceGitHub {
@@ -138,9 +138,9 @@ func AddServiceToken(token *ServiceToken) (err error) {
 	return
 }
 
-func GetServiceToken(service string, userID int64) (token *ServiceToken, err error) {
+func (app *Application) GetServiceToken(service string, userID int64) (token *ServiceToken, err error) {
 	var t ServiceToken
-	err = db.SelectOne(&t, "select * from servicetoken where service=$1 and \"userId\"=$2", service, userID)
+	err = app.db.SelectOne(&t, "select * from servicetoken where service=$1 and \"userId\"=$2", service, userID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -152,7 +152,7 @@ func GetServiceToken(service string, userID int64) (token *ServiceToken, err err
 	return token, err
 }
 
-func GetUserClients(userID int64) (c *GitHubClients, err error) {
+func (app *Application) GetUserClients(userID int64) (c *GitHubClients, err error) {
 	var (
 		found bool
 	)
@@ -164,7 +164,7 @@ func GetUserClients(userID int64) (c *GitHubClients, err error) {
 		return c, nil
 	}
 
-	if c, err = newGitHubClients(userID); err != nil {
+	if c, err = app.newGitHubClients(userID); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func GetUserClients(userID int64) (c *GitHubClients, err error) {
 	return
 }
 
-func GetInstallationClients(installationID int64) (c *GitHubClients, err error) {
+func (app *Application) GetInstallationClients(installationID int64) (c *GitHubClients, err error) {
 	var (
 		found bool
 	)
@@ -184,7 +184,7 @@ func GetInstallationClients(installationID int64) (c *GitHubClients, err error) 
 		return c, nil
 	}
 
-	if c, err = newGitHubInstallationClients(installationID); err != nil {
+	if c, err = app.newGitHubInstallationClients(installationID); err != nil {
 		return nil, err
 	}
 

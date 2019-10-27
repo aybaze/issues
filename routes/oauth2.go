@@ -24,12 +24,10 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/oxisto/go-httputil/auth"
 	"golang.org/x/oauth2"
-	gh "golang.org/x/oauth2/github"
 )
 
 var (
 	ctx       context.Context
-	conf      *oauth2.Config
 	jwtSecret string
 )
 
@@ -37,44 +35,35 @@ func init() {
 	ctx = context.Background()
 }
 
-// AddServiceConnection adds a new connection to an external service. For now this
-// just statically sets up the GitHub connection
-func AddServiceConnection(service string, clientID string, clientSecret string) {
-	log.Infof("Adding service connection to %s using client ID %s", service, clientID)
-
-	conf = &oauth2.Config{
-		ClientID:     clientID,
-		Scopes:       []string{"repo", "read:user"},
-		ClientSecret: clientSecret,
-		Endpoint:     gh.Endpoint,
-	}
-}
-
 // SetJWTSecret sets the JWT secret used for signing tokens issued by our API
 func SetJWTSecret(secret string) {
 	jwtSecret = secret
 }
 
-func handleOAuthFlowError(err error, w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleOAuthFlowError(err error, w http.ResponseWriter, r *http.Request) {
 	log.Errorf("Could not fetch access token: %v", err)
 	w.Header().Add("Location", "/oauth2/login")
 	w.WriteHeader(http.StatusFound)
 }
 
-func handleOAuth2Login(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleOAuth2Login(w http.ResponseWriter, r *http.Request) {
+	app := router.app
+	conf := app.GetServiceConnection(issues.ServiceGitHub)
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOnline)
 
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusFound)
 }
 
-func handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	var (
 		serviceToken *oauth2.Token
 		apiToken     *oauth2.Token
 		user         *github.User
 		err          error
 	)
+	app := router.app
+	conf := app.GetServiceConnection(issues.ServiceGitHub)
 	code := r.URL.Query().Get("code")
 
 	log.Infof("Got callback for code %s", code)
@@ -82,7 +71,7 @@ func handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	// fetch access token with authorization code
 	serviceToken, err = conf.Exchange(ctx, code)
 	if err != nil {
-		handleOAuthFlowError(err, w, r)
+		router.handleOAuthFlowError(err, w, r)
 		return
 	}
 
@@ -92,12 +81,12 @@ func handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	gc := github.NewClient(tc)
 
 	if user, _, err = gc.Users.Get(ctx, ""); err != nil {
-		handleOAuthFlowError(err, w, r)
+		router.handleOAuthFlowError(err, w, r)
 		return
 	}
 
 	// cache the service token
-	err = issues.AddServiceToken(&issues.ServiceToken{
+	err = app.AddServiceToken(&issues.ServiceToken{
 		user.GetID(),
 		issues.ServiceGitHub,
 		serviceToken.AccessToken})
@@ -112,7 +101,7 @@ func handleOAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	// issue an authentication token for our own API
 	apiToken, err = auth.IssueToken([]byte(jwtSecret), fmt.Sprintf("%d", user.GetID()), time.Now().Add(1*time.Hour))
 	if err != nil {
-		handleOAuthFlowError(err, w, r)
+		router.handleOAuthFlowError(err, w, r)
 		return
 	}
 

@@ -24,6 +24,18 @@ import (
 
 type RepositoryRefArray []int64
 
+type Workspace struct {
+	ID            int64              `db:"id, primarykey, autoincrement" json:"id"`
+	Name          string             `db:"name" json:"name"`
+	RepositoryIDs RepositoryRefArray `db:"repositoryIDs" json:"repositoryIDs"`
+}
+
+type Relationship struct {
+	IssueID      int64  `db:"issueId, primarykey"`
+	OtherIssueID int64  `db:"otherIssueId"`
+	Type         string `db:"type"`
+}
+
 func (r *RepositoryRefArray) Scan(src interface{}) error {
 	u, ok := src.([]uint8)
 	if !ok {
@@ -52,13 +64,13 @@ func (r *RepositoryRefArray) Scan(src interface{}) error {
 	return nil
 }
 
-func GetWorkspace(workspaceID int64, db Database) (*Workspace, error) {
+func (app *Application) GetWorkspace(workspaceID int64) (*Workspace, error) {
 	var (
 		workspace Workspace
 		err       error
 	)
 
-	err = db.SelectOne(&workspace, "select * from workspace where id=$1", workspaceID)
+	err = app.db.SelectOne(&workspace, "select * from workspace where id=$1", workspaceID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -66,16 +78,4 @@ func GetWorkspace(workspaceID int64, db Database) (*Workspace, error) {
 	}
 
 	return &workspace, nil
-}
-
-type Workspace struct {
-	ID            int64              `db:"id, primarykey, autoincrement" json:"id"`
-	Name          string             `db:"name" json:"name"`
-	RepositoryIDs RepositoryRefArray `db:"repositoryIDs" json:"repositoryIDs"`
-}
-
-type Relationship struct {
-	IssueID      int64  `db:"issueId, primarykey"`
-	OtherIssueID int64  `db:"otherIssueId"`
-	Type         string `db:"type"`
 }

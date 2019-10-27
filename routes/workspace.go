@@ -23,14 +23,14 @@ import (
 	"github.com/oxisto/go-httputil"
 )
 
-func handleGetWorkspaces(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleGetWorkspaces(w http.ResponseWriter, r *http.Request) {
 	var workspaces []issues.Workspace
-	_, err := issues.GetDatabase().Select(&workspaces, "select * from workspace")
+	_, err := router.app.GetDatabase().Select(&workspaces, "select * from workspace")
 
 	httputil.JSONResponse(w, r, workspaces, err)
 }
 
-func handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
 	var (
 		workspaceID int64
 		workspace   *issues.Workspace
@@ -43,13 +43,13 @@ func handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: check somehow, if user has access
-	workspace, err = issues.GetWorkspace(workspaceID, issues.GetDatabase())
+	workspace, err = router.app.GetWorkspace(workspaceID)
 	httputil.JSONResponse(w, r, workspace, err)
 
 	return
 }
 
-func handleGetIssues(w http.ResponseWriter, r *http.Request) {
+func (router *Router) handleGetIssues(w http.ResponseWriter, r *http.Request) {
 	var (
 		workspaceID int
 		err         error

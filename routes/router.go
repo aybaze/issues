@@ -37,10 +37,15 @@ func init() {
 	log = logrus.WithField("component", "routes")
 }
 
-func WithMiddleware(handler *auth.JWTHandler, handlerFunc http.HandlerFunc) *negroni.Negroni {
+type Router struct {
+	*mux.Router
+	app *issues.Application
+}
+
+func (router *Router) WithMiddleware(handler *auth.JWTHandler, handlerFunc http.HandlerFunc) *negroni.Negroni {
 	return negroni.New(
 		negroni.HandlerFunc(handler.HandleWithNext),
-		negroni.HandlerFunc(HandleFetchCharacterWithNext),
+		negroni.HandlerFunc(router.HandleDecodeClaimsWithNext),
 		negroni.Wrap(handlerFunc),
 	)
 }
@@ -60,8 +65,9 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request, next http.Ha
 	return
 }
 
-// Special implementation for Negroni, but could be used elsewhere.
-func HandleFetchCharacterWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+// HandleDecodeClaimsWithNext extracts the claims from the supplied JWT and injects
+// it into the request context
+func (router *Router) HandleDecodeClaimsWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	var (
 		token   *jwt.Token
 		claims  *jwt.StandardClaims
@@ -72,6 +78,7 @@ func HandleFetchCharacterWithNext(w http.ResponseWriter, r *http.Request, next h
 		ok      bool
 	)
 
+	app := router.app
 	token, ok = r.Context().Value(auth.DefaultAuthContext).(*jwt.Token)
 	if !ok {
 		log.Errorf("Got invalid claims")
@@ -95,7 +102,7 @@ func HandleFetchCharacterWithNext(w http.ResponseWriter, r *http.Request, next h
 
 	service = issues.ServiceGitHub
 
-	if clients, err = issues.GetUserClients(userID); err != nil {
+	if clients, err = app.GetUserClients(userID); err != nil {
 		if errors.Is(err, issues.ErrAuthenticationNeeded) {
 			log.Errorf("Could not find valid token for service %s: %s", service, err)
 			w.WriteHeader(401)
@@ -113,7 +120,7 @@ func HandleFetchCharacterWithNext(w http.ResponseWriter, r *http.Request, next h
 	next(w, r)
 }
 
-func NewRouter(jwtSecret string) *mux.Router {
+func NewRouter(app *issues.Application, jwtSecret string) *Router {
 	// set the JWT secret so its accessible in API handlers
 	SetJWTSecret(jwtSecret)
 
@@ -127,13 +134,13 @@ func NewRouter(jwtSecret string) *mux.Router {
 	options.ErrorHandler = HandleError
 	handler := auth.NewHandler(options)
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/oauth2/callback", handleOAuth2Callback)
-	router.HandleFunc("/oauth2/login", handleOAuth2Login)
-	router.HandleFunc("/github/callback", handleGitHubCallback).Methods("POST")
-	router.Handle("/api/v1/workspaces/", WithMiddleware(handler, handleGetWorkspaces)).Methods("GET")
-	router.Handle("/api/v1/workspaces/{workspaceID}", WithMiddleware(handler, handleGetWorkspace)).Methods("GET")
-	router.Handle("/api/v1/workspaces/{workspaceID}/issues", WithMiddleware(handler, handleGetIssues)).Methods("GET")
+	router := &Router{mux.NewRouter().StrictSlash(true), app}
+	router.HandleFunc("/oauth2/callback", router.handleOAuth2Callback)
+	router.HandleFunc("/oauth2/login", router.handleOAuth2Login)
+	router.HandleFunc("/github/callback", router.handleGitHubCallback).Methods("POST")
+	router.Handle("/api/v1/workspaces/", router.WithMiddleware(handler, router.handleGetWorkspaces)).Methods("GET")
+	router.Handle("/api/v1/workspaces/{workspaceID}", router.WithMiddleware(handler, router.handleGetWorkspace)).Methods("GET")
+	router.Handle("/api/v1/workspaces/{workspaceID}/issues", router.WithMiddleware(handler, router.handleGetIssues)).Methods("GET")
 
 	return router
 }
