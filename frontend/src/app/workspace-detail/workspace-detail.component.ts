@@ -4,7 +4,7 @@ import { WorkspaceService } from '../workspace.service';
 import { Workspace, Issue } from '../workspace';
 
 @Component({
-  selector: 'app-workspace-detail',
+  selector: 'issues-workspace-detail',
   templateUrl: './workspace-detail.component.html',
   styleUrls: ['./workspace-detail.component.scss']
 })
@@ -30,13 +30,13 @@ export class WorkspaceDetailComponent implements OnInit {
       this.workspace = workspace;
 
       this.fetchBacklog();
-    })
+    });
   }
 
   fetchBacklog() {
     this.workspaceService.getIssuers(this.workspaceId).subscribe(issues => {
       this.backlog = issues;
-    })
+    });
   }
 
 }

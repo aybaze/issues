@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 
 @Component({
-  selector: 'app-user-link',
+  selector: 'issues-user-link',
   templateUrl: './user-link.component.html',
   styleUrls: ['./user-link.component.scss']
 })

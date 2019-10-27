@@ -11,8 +11,8 @@
         </ng-template>
         <div>
             <div style="font-weight: 600;">{{ issue.title }}</div>
-            <small class="text-muted">#{{ issue.number }} opened {{ issue.created_at | amTimeAgo }} by <app-user-link
-                    [user]="issue.user"></app-user-link></small>
+            <small class="text-muted">#{{ issue.number }} opened {{ issue.created_at | amTimeAgo }} by <issues-user-link
+                    [user]="issue.user"></issues-user-link></small>
         </div>
     </li>
 </ul>
