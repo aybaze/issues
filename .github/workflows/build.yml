@@ -20,6 +20,6 @@ jobs:
     - name: Expose current build
       run: export TAG=${{ steps.publish.outputs.snapshot-tag }}
     - name: Install gettext
-      run: apt update && apt install -y gettext
+      run: sudo apt update && sudo apt install -y gettext
     - name: Install API
       run: envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
