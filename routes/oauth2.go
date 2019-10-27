@@ -86,7 +86,7 @@ func (router *Router) handleOAuth2Callback(w http.ResponseWriter, r *http.Reques
 	}
 
 	// cache the service token
-	err = app.AddServiceToken(&servicetoken{
+	err = app.AddServiceToken(&issues.ServiceToken{
 		user.GetID(),
 		issues.ServiceGitHub,
 		serviceToken.AccessToken})
