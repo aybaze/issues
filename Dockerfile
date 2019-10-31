@@ -30,7 +30,7 @@ FROM alpine
 RUN apk update && apk add ca-certificates postgresql-client
 WORKDIR /usr/aybaze
 
-COPY --from=build-frontend /tmp/dist ./frontend/dist
+COPY --from=build-frontend /tmp/dist/frontend ./frontend/dist
 COPY --from=build-server /build/issues .
 
 ADD restore.sh .
