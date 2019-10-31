@@ -1,10 +1,10 @@
-FROM node:11 AS build-frontend
+FROM node AS build-frontend
 
 WORKDIR /tmp
 
 ADD frontend/*.json ./
 ADD frontend/*.lock ./
-RUN yarn install --ignore-optionals
+RUN yarn install --ignore-optional
 
 ADD frontend/. .
 RUN yarn run lint
