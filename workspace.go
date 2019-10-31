@@ -41,6 +41,11 @@ type Relationship struct {
 }
 
 func (r *RepositoryRefArray) Scan(src interface{}) error {
+	if src == nil {
+		*r = nil
+		return nil
+	}
+
 	u, ok := src.([]uint8)
 	if !ok {
 		return errors.New("Unable to convert type from []uint8")
