@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "cmd/issues/issues.go",
+            "program": "${workspaceFolder}/cmd/issues/issues.go",
             "env": {},
             "cwd": "${workspaceFolder}",
             "args": []

@@ -41,7 +41,7 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		log.Debugf("Got event %s for issue %s", event.GetAction(), issuerIdentifier(event))
+		log.Debugf("Got event %s for issue %s", event.GetAction(), issues.GetIssueIdentifier(event))
 
 		if event.GetAction() == "edited" {
 			// do not trigger on bot updates, otherwise we will update forever
@@ -56,14 +56,13 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func issuerIdentifier(event github.IssuesEvent) string {
-	return fmt.Sprintf("%s/%s#%d", event.Repo.Owner.GetLogin(), event.Repo.GetName(), event.GetIssue().GetNumber())
-}
-
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
 	var err error
 
 	issue := event.GetIssue()
+
+	// update epic status, if necessary
+	router.app.UpdateEpicStatus(clients, event)
 
 	// find relationships to other issues
 	var relationships []issues.Relationship
@@ -86,9 +85,9 @@ func (router *Router) handleIssueChange(clients *issues.GitHubClients, event git
 
 	// update issue text
 	if _, _, err = clients.V3.Issues.Edit(context.Background(), *event.Repo.Owner.Login, *event.Repo.Name, *issue.Number, &request); err != nil {
-		log.Errorf("Updating issue %s failed: %s", issuerIdentifier(event), err)
+		log.Errorf("Updating issue %s failed: %s", issues.GetIssueIdentifier(event), err)
 		return
 	}
 
-	log.Infof("Updated issue %s", issuerIdentifier(event))
+	log.Infof("Updated issue %s", issues.GetIssueIdentifier(event))
 }
