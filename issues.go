@@ -99,7 +99,10 @@ func (app *Application) UpdateEpicStatus(clients *GitHubClients, event github.Is
 		// find issue
 		epic, _, _ := clients.V3.Issues.Get(context.Background(), event.Repo.Owner.GetLogin(), event.Repo.GetName(), epicNumber)
 
-		body, status := CheckIfContainsIssue(epic.GetBody(), issue.GetTitle(), issue.GetNumber())
+		epicBody := epic.GetBody()
+		// the parser has problems with \r\n
+		epicBody = strings.ReplaceAll(epicBody, "\r\n", "\n")
+		body, status := CheckIfContainsIssue(epicBody, issue.GetTitle(), issue.GetNumber())
 
 		if status != NotModified {
 			request := github.IssueRequest{
