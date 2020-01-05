@@ -71,6 +71,12 @@ func (router *Router) handleIssueChange(clients *issues.GitHubClients, event git
 		return
 	}
 
+	// skip, if there are no relationships
+	if len(relationships) == 0 {
+		log.Debugf("Issue %s does not have relationships, not updating", issues.GetIssueIdentifier(event))
+		return
+	}
+
 	footer := "\n\n---\n\n"
 
 	for _, relationship := range relationships {

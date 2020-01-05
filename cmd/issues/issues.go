@@ -94,6 +94,7 @@ func doCmd(cmd *cobra.Command, args []string) {
 
 	app := issues.NewApplication(appID, db)
 	app.AddServiceConnection(issues.ServiceGitHub, viper.GetString(GitHubAppClientIDFlag), viper.GetString(GitHubAppClientSecretFlag))
+
 	router := handlers.LoggingHandler(&httputil.LogWriter{Level: log.DebugLevel, Component: "http"}, routes.NewRouter(app, viper.GetString(JwtSecretFlag)))
 
 	listen := viper.GetString(ListenFlag)
