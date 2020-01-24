@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/jsternberg/markdownfmt/markdown"
+	"github.com/shurcooL/githubv4"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	oauth2GitHub "golang.org/x/oauth2/github"
@@ -74,6 +75,25 @@ func (app *Application) AddServiceConnection(service string, clientID string, cl
 
 func (app *Application) GetServiceConnection(service string) *oauth2.Config {
 	return app.gh
+}
+
+func (app *Application) RemoveOldContainers(clients *GitHubClients) {
+	var q struct {
+		Repository struct {
+			Issue struct {
+				Nodes []issue
+			} `graphql:"issues(last: 100, filterBy: {milestone: null, states: OPEN})"`
+		} `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
+	}
+
+	variables := map[string]interface{}{
+		"repositoryOwner": githubv4.String("aybaze"),
+		"repositoryName":  githubv4.String("aybaze"),
+	}
+
+	err := clients.V4.Query(context.Background(), &q, variables)
+
+	fmt.Printf("%v", err)
 }
 
 func (app *Application) UpdateEpicStatus(clients *GitHubClients, event github.IssuesEvent) {
