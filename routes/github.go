@@ -44,6 +44,7 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 		decoder.Decode(&event)
 
 		if clients, err = router.app.GetInstallationClients(event.GetInstallation().GetID()); err != nil {
+			log.Errorf("Could not create installation client: %s", err)
 			return
 		}
 
@@ -64,6 +65,7 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 		decoder.Decode(&event)
 
 		if clients, err = router.app.GetInstallationClients(event.GetInstallation().GetID()); err != nil {
+			log.Errorf("Could not create installation client: %s", err)
 			return
 		}
 
