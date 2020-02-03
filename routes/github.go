@@ -56,6 +56,9 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 			if strings.HasPrefix(comment, "/branch") {
 				router.handleBranchIssue(clients, event)
 				return
+			} else if strings.HasPrefix(comment, "/pr") {
+				router.handleIssuePR(clients, event)
+				return
 			}
 		}
 	} else if eventType == "issues" {
@@ -161,13 +164,30 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 		return
 	}
 
-	/*body := fmt.Sprintf("Fixes #%d", issue.GetNumber())
+}
+
+func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.IssueCommentEvent) {
+	var (
+		err        error
+		issue      *github.Issue
+		repo       *github.Repository
+		newPull    *github.NewPullRequest
+		pull       *github.PullRequest
+		branchName string
+	)
+
+	// desired branch name
+	issue = event.GetIssue()
+	repo = event.GetRepo()
+	branchName = fmt.Sprintf("%d-%s", issue.GetNumber(), shortIssueTitle(issue))
+
 	issueNumber := issue.GetNumber()
 	base := repo.GetDefaultBranch()
 	modify := true
 	draft := true
+	body := ""
 
-	pull := &github.NewPullRequest{
+	newPull = &github.NewPullRequest{
 		Head:                &branchName,
 		Base:                &base,
 		Body:                &body,
@@ -176,10 +196,22 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 		Draft:               &draft,
 	}
 
-	if _, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), pull); err != nil {
+	// create the PR
+	if pull, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), newPull); err != nil {
 		log.Errorf("Creating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
 		return
-	}*/
+	}
+
+	// update it
+	labels := []string{}
+	for _, label := range issue.Labels {
+		labels = append(labels, label.GetName())
+	}
+
+	if _, _, err = clients.V3.Issues.ReplaceLabelsForIssue(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), pull.GetNumber(), labels); err != nil {
+		log.Errorf("Updating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
+		return
+	}
 }
 
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
