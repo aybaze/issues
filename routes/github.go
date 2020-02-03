@@ -119,10 +119,6 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 
 	log.Infof("Issue %s is now developed in branch %s", issues.GetIssueIdentifier(repo, issue), branchName)
 
-	log.Debugf("%s", repo.GetOwner().GetLogin())
-	log.Debugf("%s", repo.GetName())
-	log.Debugf("%s", branchName)
-
 	if branch, resp, err = clients.V3.Repositories.GetBranch(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), branchName); err != nil {
 		if resp == nil || resp != nil && resp.StatusCode != 404 {
 			log.Errorf("Retrieving branch %s from %s failed: %s", branchName, issues.GetIssueIdentifier(repo, issue), err)

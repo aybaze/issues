@@ -18,6 +18,8 @@ config
 
 # Private keys for GitHub installation
 *.private-key.pem
+keys
 
 # Temporary stuff
 .data
+.DS_Store

@@ -95,7 +95,7 @@ func (app *Application) newGitHubClients(userID int64) (clients *GitHubClients, 
 func (app *Application) newGitHubInstallationClients(installationID int64) (clients *GitHubClients, err error) {
 	tr := http.DefaultTransport
 
-	itr, err := ghinstallation.NewKeyFromFile(tr, app.AppID, installationID, "keys/2019-10-26.private-key.pem")
+	itr, err := ghinstallation.NewKeyFromFile(tr, app.AppID, installationID, "keys/private-key.pem")
 	if err != nil {
 		return nil, err
 	}
