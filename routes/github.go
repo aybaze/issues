@@ -150,7 +150,9 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 
 	log.Debugf("Created branch %s (%s) for issue %s", branchName, ref.GetRef(), issues.GetIssueIdentifier(repo, issue))
 
-	body := fmt.Sprintf("Created branch [%s](/%s/%s/tree/%s) for development of this issue", branchName, repo.GetOwner().GetLogin(), repo.GetName(), branchName)
+	desktopURL := fmt.Sprintf("x-github-client://openRepo/https://github.com/%s/%s?branch=%s", repo.GetOwner().GetLogin(), repo.GetName(), branchName)
+	branchURL := fmt.Sprintf("/%s/%s/tree/%s", repo.GetOwner().GetLogin(), repo.GetName(), branchName)
+	body := fmt.Sprintf("Created branch [%s](%s) for development of this issue. You can directly [open this in GitHub Desktop](%s).", branchName, branchURL, desktopURL)
 
 	if _, _, err = clients.V3.Issues.CreateComment(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), issue.GetNumber(), &github.IssueComment{
 		Body: &body,
