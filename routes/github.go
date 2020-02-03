@@ -53,7 +53,7 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 		if event.GetAction() == "created" {
 			comment := event.Comment.GetBody()
 
-			if strings.Contains(comment, "/branch") {
+			if strings.HasPrefix(comment, "/branch") {
 				router.handleBranchIssue(clients, event)
 				return
 			}
@@ -150,7 +150,16 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 
 	log.Debugf("Created branch %s (%s) for issue %s", branchName, ref.GetRef(), issues.GetIssueIdentifier(repo, issue))
 
-	body := fmt.Sprintf("Fixes #%d", issue.GetNumber())
+	body := fmt.Sprintf("Created branch [%s](/%s/%s/tree/%s) for development of this issue", branchName, repo.GetOwner().GetLogin(), repo.GetName(), branchName)
+
+	if _, _, err = clients.V3.Issues.CreateComment(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), issue.GetNumber(), &github.IssueComment{
+		Body: &body,
+	}); err != nil {
+		log.Errorf("Creating comment for issue %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
+		return
+	}
+
+	/*body := fmt.Sprintf("Fixes #%d", issue.GetNumber())
 	issueNumber := issue.GetNumber()
 	base := repo.GetDefaultBranch()
 	modify := true
@@ -168,7 +177,7 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 	if _, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), pull); err != nil {
 		log.Errorf("Creating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
 		return
-	}
+	}*/
 }
 
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
