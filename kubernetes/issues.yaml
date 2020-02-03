@@ -16,26 +16,26 @@ spec:
         app: issues
     spec:
       containers:
-      - image: aybaze/issues:$TAG
-        imagePullPolicy: Always
-        name: issues
-        env:
-        - name: ISSUES_POSTGRES
-          value: postgres
-        volumeMounts:
-        - name: config
-          mountPath: /usr/aybaze/config
-          readOnly: true
-        ports:
-        - containerPort: 8000
-          protocol: TCP
+        - image: aybaze/issues:$TAG
+          imagePullPolicy: Always
+          name: issues
+          env:
+            - name: ISSUES_POSTGRES
+              value: issues-postgres
+          volumeMounts:
+            - name: config
+              mountPath: /usr/aybaze/config
+              readOnly: true
+          ports:
+            - containerPort: 8000
+              protocol: TCP
       volumes:
-      - name: config
-        secret:
-          secretName: config-secret
-          items:
-          - key: config-production.yaml
-            path: config.yaml
+        - name: config
+          secret:
+            secretName: config-secret
+            items:
+              - key: config-production.yaml
+                path: config.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -44,9 +44,9 @@ metadata:
   namespace: aybaze
 spec:
   ports:
-  - port: 8000
-    protocol: TCP
-    targetPort: 8000
+    - port: 8000
+      protocol: TCP
+      targetPort: 8000
   selector:
     app: issues
 ---
@@ -60,14 +60,14 @@ metadata:
   namespace: aybaze
 spec:
   rules:
-  - host: issues.aybaze.com
-    http:
-      paths:
-      - backend:
-          serviceName: issues
-          servicePort: 8000
-        path: /
+    - host: issues.aybaze.com
+      http:
+        paths:
+          - backend:
+              serviceName: issues
+              servicePort: 8000
+            path: /
   tls:
-  - hosts:
-    - issues.aybaze.com
-    secretName: issues-tls
+    - hosts:
+        - issues.aybaze.com
+      secretName: issues-tls

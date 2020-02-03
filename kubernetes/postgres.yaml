@@ -1,0 +1,56 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: issues-postgres-claim
+  namespace: aybaze
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: issues-postgres
+  namespace: aybaze
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: issues-postgres
+  template:
+    metadata:
+      labels:
+        app: issues-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres
+          env:
+            - name: POSTGRES_DB
+              value: issues
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: issues-postgres-claim
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: issues-postgres-claim
+          persistentVolumeClaim:
+            claimName: issues-postgres-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: issues-postgres
+  namespace: aybaze
+spec:
+  selector:
+    app: issues-postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

@@ -4,22 +4,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Publish to Registry
-      id: publish
-      uses: elgohr/Publish-Docker-Github-Action@master
-      with:
-        name: aybaze/issues
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        snapshot: true
-    - name: Download kubectl
-      run: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
-    - name: Retrieve kubeconfig from ENV
-      run: mkdir -p ~/.kube && echo ${{ secrets.KUBECONFIG_BASE64 }} | base64 -d > ~/.kube/config
-    - name: Install gettext
-      run: sudo apt update && sudo apt install -y gettext
-    - name: Install API
-      run: |
-        export TAG=${{ steps.publish.outputs.snapshot-tag }}
-        envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
+      - uses: actions/checkout@master
+      - name: Publish to Registry
+        id: publish
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: aybaze/issues
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          snapshot: true
+      - name: Deploy Kubernetes
+        run: |
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
+          mkdir -p ~/.kube && echo ${{ secrets.KUBECONFIG_BASE64 }} | base64 -d > ~/.kube/config
+          export TAG=${{ steps.publish.outputs.snapshot-tag }}
+          envsubst < kubernetes/issues.yaml | ./kubectl apply -f -
+          envsubst < kubernetes/postgres.yaml | ./kubectl apply -f -
