@@ -151,14 +151,12 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 	log.Debugf("Created branch %s (%s) for issue %s", branchName, ref.GetRef(), issues.GetIssueIdentifier(repo, issue))
 
 	body := fmt.Sprintf("Fixes #%d", issue.GetNumber())
-	title := issue.GetTitle()
 	issueNumber := issue.GetNumber()
 	base := repo.GetDefaultBranch()
 	modify := true
 	draft := true
 
 	pull := &github.NewPullRequest{
-		Title:               &title,
 		Head:                &branchName,
 		Base:                &base,
 		Body:                &body,
