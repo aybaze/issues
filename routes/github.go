@@ -184,16 +184,12 @@ func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.
 	issueNumber := issue.GetNumber()
 	base := repo.GetDefaultBranch()
 	modify := true
-	draft := true
-	body := ""
 
 	newPull = &github.NewPullRequest{
 		Head:                &branchName,
 		Base:                &base,
-		Body:                &body,
 		Issue:               &issueNumber,
 		MaintainerCanModify: &modify,
-		Draft:               &draft,
 	}
 
 	// create the PR
