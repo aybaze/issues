@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	"github.com/oxisto/go-httputil/auth"
 	"golang.org/x/oauth2"
 )

@@ -29,7 +29,7 @@ import (
 	oauth2GitHub "golang.org/x/oauth2/github"
 	"gopkg.in/russross/blackfriday.v2"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 )
 
 var (
@@ -114,7 +114,7 @@ func (app *Application) UpdateEpicStatus(clients *GitHubClients, event github.Is
 		epicNumber := int(i)
 		epicIssueString := fmt.Sprintf("%s/%s#%d", event.Repo.Owner.GetLogin(), event.Repo.GetName(), epicNumber)
 
-		log.Infof("Issue %s needs to be connected to epic %s", GetIssueIdentifier(event), epicIssueString)
+		log.Infof("Issue %s needs to be connected to epic %s", GetIssueIdentifier(event.GetRepo(), event.GetIssue()), epicIssueString)
 
 		// find issue
 		epic, _, _ := clients.V3.Issues.Get(context.Background(), event.Repo.Owner.GetLogin(), event.Repo.GetName(), epicNumber)
@@ -138,8 +138,8 @@ func (app *Application) UpdateEpicStatus(clients *GitHubClients, event github.Is
 	}
 }
 
-func GetIssueIdentifier(event github.IssuesEvent) string {
-	return fmt.Sprintf("%s/%s#%d", event.Repo.Owner.GetLogin(), event.Repo.GetName(), event.GetIssue().GetNumber())
+func GetIssueIdentifier(repo *github.Repository, issue *github.Issue) string {
+	return fmt.Sprintf("%s/%s#%d", repo.Owner.GetLogin(), repo.GetName(), issue.GetNumber())
 }
 
 type IssueUpdateStatus int
