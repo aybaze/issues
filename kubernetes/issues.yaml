@@ -26,7 +26,6 @@ spec:
             - name: keys
               mountPath: /usr/aybaze/keys
               readOnly: true
-          volumeMounts:
             - name: config
               mountPath: /usr/aybaze/config
               readOnly: true
@@ -45,7 +44,7 @@ spec:
             secretName: issues-keys
             items:
               - key: 2019-10-26.private-key.pem
-                path: 2019-10-26.private-key.pem               
+                path: 2019-10-26.private-key.pem
 ---
 apiVersion: v1
 kind: Service
