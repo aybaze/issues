@@ -56,6 +56,9 @@ func (router *Router) handleGitHubCallback(w http.ResponseWriter, r *http.Reques
 			if strings.HasPrefix(comment, "/branch") {
 				router.handleBranchIssue(clients, event)
 				return
+			} else if strings.HasPrefix(comment, "/pr") {
+				router.handleIssuePR(clients, event)
+				return
 			}
 		}
 	} else if eventType == "issues" {
@@ -161,25 +164,44 @@ func (router *Router) handleBranchIssue(clients *issues.GitHubClients, event git
 		return
 	}
 
-	/*body := fmt.Sprintf("Fixes #%d", issue.GetNumber())
+}
+
+func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.IssueCommentEvent) {
+	var (
+		err        error
+		issue      *github.Issue
+		repo       *github.Repository
+		newPull    *github.NewPullRequest
+		branchName string
+	)
+
+	// desired branch name
+	issue = event.GetIssue()
+	repo = event.GetRepo()
+	branchName = fmt.Sprintf("%d-%s", issue.GetNumber(), shortIssueTitle(issue))
+
 	issueNumber := issue.GetNumber()
 	base := repo.GetDefaultBranch()
 	modify := true
-	draft := true
 
-	pull := &github.NewPullRequest{
+	newPull = &github.NewPullRequest{
 		Head:                &branchName,
 		Base:                &base,
-		Body:                &body,
 		Issue:               &issueNumber,
 		MaintainerCanModify: &modify,
-		Draft:               &draft,
 	}
 
-	if _, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), pull); err != nil {
+	// see if we have user-based credentials for the invoker of the command
+	userClients, _ := router.app.GetUserClients(event.GetSender().GetID())
+	if userClients != nil {
+		clients = userClients
+	}
+
+	// create the PR
+	if _, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), newPull); err != nil {
 		log.Errorf("Creating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
 		return
-	}*/
+	}
 }
 
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {

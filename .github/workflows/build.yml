@@ -14,6 +14,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           snapshot: true
       - name: Deploy Kubernetes
+        if: github.ref != 'refs/heads/master'
         run: |
           curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
           mkdir -p ~/.kube && echo ${{ secrets.KUBECONFIG_BASE64 }} | base64 -d > ~/.kube/config
