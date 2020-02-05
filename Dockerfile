@@ -33,8 +33,6 @@ WORKDIR /usr/aybaze
 COPY --from=build-frontend /tmp/dist/frontend ./frontend/dist
 COPY --from=build-server /build/issues .
 
-ADD restore.sh .
 ADD docker-entrypoint.sh .
-ADD sql sql
 
 CMD ["./docker-entrypoint.sh"]

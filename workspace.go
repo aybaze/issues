@@ -16,7 +16,6 @@ package issues
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -29,15 +28,15 @@ import (
 type RepositoryRefArray []int64
 
 type Workspace struct {
-	ID            int64              `db:"id, primarykey, autoincrement" json:"id"`
-	Name          string             `db:"name" json:"name"`
-	RepositoryIDs RepositoryRefArray `db:"repositoryIDs" json:"repositoryIDs"`
+	ID            int64              `json:"id"`
+	Name          string             `json:"name"`
+	RepositoryIDs RepositoryRefArray `json:"repositoryIDs" gorm:"type:integer[]"`
 }
 
 type Relationship struct {
-	IssueID      int64  `db:"issueId, primarykey"`
-	OtherIssueID int64  `db:"otherIssueId"`
-	Type         string `db:"type"`
+	IssueID      int64  `josn:"issueId" gorm:"primary_key;auto_increment:false"`
+	OtherIssueID int64  `json:"otherIssueId" gorm:"primary_key;auto_increment:false"`
+	Type         string `json:"type"`
 }
 
 func (r *RepositoryRefArray) Scan(src interface{}) error {
@@ -74,19 +73,7 @@ func (r *RepositoryRefArray) Scan(src interface{}) error {
 }
 
 func (app *Application) GetWorkspace(workspaceID int64) (*Workspace, error) {
-	var (
-		workspace Workspace
-		err       error
-	)
-
-	err = app.db.SelectOne(&workspace, "select * from workspace where id=$1", workspaceID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	return &workspace, nil
+	return app.db.GetWorkspace(workspaceID)
 }
 
 type issue struct {
