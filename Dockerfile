@@ -15,8 +15,9 @@ FROM golang AS build-server
 WORKDIR /build
 
 # copy dependency information and fetch them
-COPY go.mod ./
-RUN go mod download
+#COPY go.mod ./
+#COPY go.sum ./
+#RUN go mod vendor
 
 # copy sources
 COPY . .
