@@ -205,7 +205,10 @@ func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.
 }
 
 func (router *Router) handleIssueChange(clients *issues.GitHubClients, event github.IssuesEvent) {
-	var err error
+	var (
+		err           error
+		relationships []*issues.Relationship
+	)
 
 	issue := event.GetIssue()
 
@@ -213,8 +216,7 @@ func (router *Router) handleIssueChange(clients *issues.GitHubClients, event git
 	router.app.UpdateEpicStatus(clients, event)
 
 	// find relationships to other issues
-	var relationships []issues.Relationship
-	if _, err = router.app.GetDatabase().Select(&relationships, "select * from relationship where \"issueId\"=$1 or \"otherIssueId\"=$2", issue.GetNumber(), issue.GetNumber()); err != nil {
+	if relationships, err = router.app.GetDatabase().GetRelationships(int64(issue.GetNumber())); err != nil {
 		log.Errorf("Could not fetch relationships to other issues from database: %s", err)
 		return
 	}

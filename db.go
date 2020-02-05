@@ -15,26 +15,26 @@
 package issues
 
 import (
-	"database/sql"
 	"fmt"
 
-	_ "github.com/lib/pq"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/gorp.v2"
 )
 
 type Database interface {
 	Init()
 	Insert(object interface{}) (err error)
 	Update(object interface{}) (rowsChanged int64, err error)
-	Select(holder interface{}, query string, args ...interface{}) (objects []interface{}, err error)
-	SelectOne(holder interface{}, query string, args ...interface{}) (err error)
+	GetServiceToken(service string, userID int64) (*ServiceToken, error)
+	GetWorkspace(workspaceID int64) (*Workspace, error)
+	GetWorkspaces(query interface{}, args ...interface{}) ([]*Workspace, error)
+	GetRelationships(query interface{}, args ...interface{}) ([]*Relationship, error)
 }
 
 type MappedPostgreSQL struct {
-	host   string
-	db     *sql.DB
-	mapper *gorp.DbMap
+	host string
+	db   *gorm.DB
 }
 
 func init() {
@@ -46,11 +46,15 @@ func NewMappedPostgreSQL(host string) Database {
 }
 
 func (p *MappedPostgreSQL) Init() {
-	p.db, _ = sql.Open("postgres", fmt.Sprintf("postgres://postgres@%s/issues?sslmode=disable", p.host))
-	p.mapper = &gorp.DbMap{Db: p.db, Dialect: gorp.PostgresDialect{}}
+	var err error
 
-	p.mapper.AddTableWithName(Workspace{}, "workspace").SetKeys(true, "ID")
-	p.mapper.AddTableWithName(ServiceToken{}, "servicetoken").SetKeys(false, "UserID")
+	if p.db, err = gorm.Open("postgres", fmt.Sprintf("postgres://postgres@%s/issues?sslmode=disable", p.host)); err != nil {
+		panic(err)
+	}
+
+	p.db.AutoMigrate(&Workspace{})
+	p.db.AutoMigrate(&ServiceToken{})
+	p.db.AutoMigrate(&Relationship{})
 
 	log.Infof("Using PostgreSQL @ %s", p.host)
 }
@@ -59,19 +63,90 @@ func (p *MappedPostgreSQL) Init() {
 func (p *MappedPostgreSQL) Insert(object interface{}) (err error) {
 	log.Debugf("Inserting %+v", object)
 
-	return p.mapper.Insert(object)
+	return p.db.Create(object).Error
 }
 
 func (p *MappedPostgreSQL) Update(object interface{}) (rowsChanged int64, err error) {
 	log.Debugf("Updating %+v", object)
 
-	return p.mapper.Update(object)
+	scoped := p.db.Save(object)
+	rowsChanged = scoped.RowsAffected
+	err = scoped.Error
+	return
 }
 
-func (p *MappedPostgreSQL) Select(holder interface{}, query string, args ...interface{}) ([]interface{}, error) {
-	return p.mapper.Select(holder, query, args...)
+func (p *MappedPostgreSQL) Where(holder interface{}, query string, args ...interface{}) error {
+	return p.db.Where(query, args).Find(&holder).Error
 }
 
-func (p *MappedPostgreSQL) SelectOne(holder interface{}, query string, args ...interface{}) error {
-	return p.mapper.SelectOne(holder, query, args...)
+func (p *MappedPostgreSQL) GetWorkspace(workspaceID int64) (*Workspace, error) {
+	var w Workspace
+	err := p.db.First(&w, workspaceID).Error
+
+	if gorm.IsRecordNotFoundError(err) {
+		return nil, nil
+	}
+
+	return &w, err
+}
+
+func (p *MappedPostgreSQL) GetWorkspaces(query interface{}, args ...interface{}) ([]*Workspace, error) {
+	var (
+		w   []*Workspace
+		err error
+		db  *gorm.DB
+	)
+
+	db = p.db
+
+	if query != nil {
+		db = db.Where(query, args)
+	}
+
+	err = db.Find(&w).Error
+
+	if gorm.IsRecordNotFoundError(err) {
+		return nil, nil
+	}
+
+	return w, err
+}
+
+func (p *MappedPostgreSQL) GetServiceToken(service string, userID int64) (*ServiceToken, error) {
+	t := ServiceToken{
+		Service: "GitHub",
+		UserID:  userID,
+	}
+
+	var err error
+
+	err = p.db.Where(&t).First(&t).Error
+
+	if gorm.IsRecordNotFoundError(err) {
+		return nil, nil
+	}
+
+	return &t, err
+}
+
+func (p *MappedPostgreSQL) GetRelationships(query interface{}, args ...interface{}) ([]*Relationship, error) {
+	var (
+		r   []*Relationship
+		err error
+		db  *gorm.DB
+	)
+
+	db = p.db
+
+	if query != nil {
+		db = db.Where(query, args)
+	}
+
+	err = db.Find(&r).Error
+
+	if gorm.IsRecordNotFoundError(err) {
+		return nil, nil
+	}
+
+	return r, err
 }

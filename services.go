@@ -48,15 +48,18 @@ type GitHubClients struct {
 
 // ServiceToken represents an OAuth2-style token to an external service, such as GitHub
 type ServiceToken struct {
-	UserID      int64  `db:"userId, primarykey"`
-	Service     string `db:"service"`
-	AccessToken string `db:"accessToken"`
+	UserID      int64  `json:"userID" gorm:"primary_key"`
+	Service     string `json:"service"`
+	AccessToken string `json:"accessToken"`
 }
 
 func (app *Application) newGitHubClients(userID int64) (clients *GitHubClients, err error) {
+	var (
+		serviceToken *ServiceToken
+	)
+
 	// fetch token from db
-	var serviceToken ServiceToken
-	if err = app.db.SelectOne(&serviceToken, "select * from servicetoken where service=$1 and \"userId\"=$2", "GitHub", userID); err != nil {
+	if serviceToken, err = app.db.GetServiceToken("GitHub", userID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrAuthenticationNeeded
 		}
@@ -145,17 +148,7 @@ func (app *Application) AddServiceToken(token *ServiceToken) (err error) {
 }
 
 func (app *Application) GetServiceToken(service string, userID int64) (token *ServiceToken, err error) {
-	var t ServiceToken
-	err = app.db.SelectOne(&t, "select * from servicetoken where service=$1 and \"userId\"=$2", service, userID)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	token = &t
-
-	return token, err
+	return app.db.GetServiceToken(service, userID)
 }
 
 func (app *Application) GetUserClients(userID int64) (c *GitHubClients, err error) {

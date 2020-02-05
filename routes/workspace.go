@@ -24,8 +24,7 @@ import (
 )
 
 func (router *Router) handleGetWorkspaces(w http.ResponseWriter, r *http.Request) {
-	var workspaces []issues.Workspace
-	_, err := router.app.GetDatabase().Select(&workspaces, "select * from workspace")
+	workspaces, err := router.app.GetDatabase().GetWorkspaces(nil)
 
 	httputil.JSONResponse(w, r, workspaces, err)
 }
