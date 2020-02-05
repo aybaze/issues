@@ -172,7 +172,6 @@ func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.
 		issue      *github.Issue
 		repo       *github.Repository
 		newPull    *github.NewPullRequest
-		pull       *github.PullRequest
 		branchName string
 	)
 
@@ -192,20 +191,15 @@ func (router *Router) handleIssuePR(clients *issues.GitHubClients, event github.
 		MaintainerCanModify: &modify,
 	}
 
+	// see if we have user-based credentials for the invoker of the command
+	userClients, _ := router.app.GetUserClients(event.GetSender().GetID())
+	if userClients != nil {
+		clients = userClients
+	}
+
 	// create the PR
-	if pull, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), newPull); err != nil {
+	if _, _, err = clients.V3.PullRequests.Create(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), newPull); err != nil {
 		log.Errorf("Creating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
-		return
-	}
-
-	// update it
-	labels := []string{}
-	for _, label := range issue.Labels {
-		labels = append(labels, label.GetName())
-	}
-
-	if _, _, err = clients.V3.Issues.ReplaceLabelsForIssue(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), pull.GetNumber(), labels); err != nil {
-		log.Errorf("Updating the pull request for %s failed: %s", issues.GetIssueIdentifier(repo, issue), err)
 		return
 	}
 }
