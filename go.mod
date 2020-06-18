@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
-	github.com/jinzhu/gorm v1.9.13
+	github.com/jinzhu/gorm v1.9.14
 	github.com/jsternberg/markdownfmt v0.0.0-20180204232022-c2a5702991e3
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/oxisto/go-httputil v0.3.3
