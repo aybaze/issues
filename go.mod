@@ -13,7 +13,7 @@ require (
 	github.com/jsternberg/markdownfmt v0.0.0-20180204232022-c2a5702991e3
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/oxisto/go-httputil v0.3.3
-	github.com/shurcooL/githubv4 v0.0.0-20200414012201-bbc966b061dd
+	github.com/shurcooL/githubv4 v0.0.0-20200627185320-e003124d66e4
 	github.com/shurcooL/go v0.0.0-20191216061654-b114cc39af9f // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.6.0
