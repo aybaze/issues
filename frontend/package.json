@@ -24,7 +24,7 @@
     "bootstrap": "4.5.0",
     "font-awesome": "4.7.0",
     "moment": "2.27.0",
-    "ngx-moment": "3.5.0",
+    "ngx-moment": "4.0.1",
     "rxjs": "6.6.0",
     "tslib": "2.0.0",
     "zone.js": "0.10.3"
