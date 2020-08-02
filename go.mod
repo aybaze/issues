@@ -12,7 +12,7 @@ require (
 	github.com/jinzhu/gorm v1.9.15
 	github.com/jsternberg/markdownfmt v0.0.0-20180204232022-c2a5702991e3
 	github.com/mattn/go-runewidth v0.0.8 // indirect
-	github.com/oxisto/go-httputil v0.3.3
+	github.com/oxisto/go-httputil v0.3.7
 	github.com/shurcooL/githubv4 v0.0.0-20200802174311-f27d2ca7f6d5
 	github.com/shurcooL/go v0.0.0-20191216061654-b114cc39af9f // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
