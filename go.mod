@@ -19,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
-	github.com/urfave/negroni v1.0.0
+	github.com/urfave/negroni/v2/v2 v2.0.2
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	gopkg.in/russross/blackfriday.v2 v2.0.0
 )
