@@ -6,7 +6,7 @@ require (
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/go-github/v29 v29.0.3
-	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.7.4
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/jinzhu/gorm v1.9.16
